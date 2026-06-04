@@ -3,13 +3,13 @@
 <table align="center">
   <tr>
     <td align="center">
-      <img src="doc/logo_truong.png" height="120"/>
+      <img src="doc/anh.jpg" height="120"/>
     </td>
     <td align="center">
-      <img src="doc/blockchain.png" height="120"/>
+      <img src="doc/fitdnu_logo (1).png" height="120"/>
     </td>
     <td align="center">
-      <img src="doc/charity.png" height="120"/>
+      <img src="doc/fitdnu_logo.png" height="120"/>
     </td>
   </tr>
 </table>

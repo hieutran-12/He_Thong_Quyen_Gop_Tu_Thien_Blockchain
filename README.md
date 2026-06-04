@@ -8,9 +8,6 @@
     <td align="center">
       <img src="doc/fitdnu_logo (1).png" height="120"/>
     </td>
-    <td align="center">
-      <img src="doc/fitdnu_logo.png" height="120"/>
-    </td>
   </tr>
 </table>
 
@@ -23,6 +20,7 @@
 ---
 
 <p align="center">
+  <img src="poster.png" width="600"/>
   👉 <a href="doc/poster_blockchain.pdf"><b>📄 Xem Poster PDF đầy đủ</b></a>
 </p>
 

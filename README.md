@@ -1,1 +1,1 @@
-![Poster](images/poster.png)
+![Poster](poster.png)

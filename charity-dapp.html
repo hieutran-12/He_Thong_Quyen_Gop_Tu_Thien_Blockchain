@@ -1,0 +1,2726 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChainCharity — Hệ thống Quyên góp Minh bạch</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&family=Manrope:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #0a0e1a;
+        --bg2: #0f1424;
+        --bg3: #141929;
+        --card: #161c2e;
+        --card2: #1c2340;
+        --border: #252d47;
+        --border2: #2e3a5c;
+        --accent: #00e5ff;
+        --accent2: #7c4dff;
+        --accent3: #00ffa3;
+        --gold: #ffd54f;
+        --danger: #ff5252;
+        --text: #f0f4ff;
+        --text2: #a6b8d6;
+        --text3: #647294;
+        --green: #00ffa3;
+        --radius: 12px;
+        --radius2: 8px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: "Manrope", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* === BACKGROUND FX === */
+      .bg-fx {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        overflow: hidden;
+      }
+      .bg-orb {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(120px);
+        opacity: 0.12;
+      }
+      .orb1 {
+        width: 600px;
+        height: 600px;
+        background: var(--accent2);
+        top: -200px;
+        right: -100px;
+      }
+      .orb2 {
+        width: 400px;
+        height: 400px;
+        background: var(--accent);
+        bottom: 0;
+        left: -100px;
+      }
+      .orb3 {
+        width: 300px;
+        height: 300px;
+        background: var(--green);
+        top: 50%;
+        left: 40%;
+      }
+      .grid-overlay {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+
+      /* === HEADER === */
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        padding: 18px 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(10, 14, 26, 0.88);
+        backdrop-filter: blur(24px);
+        border-bottom: 1px solid rgba(37, 45, 71, 0.5);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+      .logo {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 20px;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .logo-icon {
+        width: 32px;
+        height: 32px;
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+      }
+      .logo-text {
+        color: var(--text);
+      }
+      .logo span {
+        color: var(--accent);
+      }
+
+      nav {
+        display: flex;
+        gap: 4px;
+      }
+      .nav-btn {
+        padding: 8px 16px;
+        border: none;
+        cursor: pointer;
+        border-radius: var(--radius2);
+        font-family: "Manrope", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+        background: transparent;
+        color: var(--text2);
+      }
+      .nav-btn:hover {
+        background: var(--bg3);
+        color: var(--text);
+      }
+      .nav-btn.active {
+        background: var(--card2);
+        color: var(--accent);
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .wallet-btn {
+        padding: 10px 22px;
+        border: none;
+        cursor: pointer;
+        border-radius: var(--radius2);
+        font-family: "Manrope", sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        box-shadow: 0 4px 16px rgba(0, 229, 255, 0.2);
+      }
+      .wallet-btn:hover {
+        opacity: 0.95;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 229, 255, 0.3);
+      }
+      .wallet-btn.connected {
+        background: var(--card2);
+        border: 1px solid var(--border2);
+        color: var(--accent);
+      }
+
+      .role-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        font-weight: 500;
+        display: none;
+      }
+      .role-badge.admin {
+        background: rgba(124, 77, 255, 0.2);
+        color: var(--accent2);
+        border: 1px solid rgba(124, 77, 255, 0.4);
+        display: inline-flex;
+      }
+      .role-badge.donor {
+        background: rgba(0, 229, 255, 0.1);
+        color: var(--accent);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        display: inline-flex;
+      }
+
+      /* === MAIN === */
+      main {
+        position: relative;
+        z-index: 1;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 24px 80px;
+      }
+
+      /* === HERO === */
+      .hero {
+        text-align: center;
+        padding: 60px 0 48px;
+      }
+      .hero-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 1px solid var(--border2);
+        background: rgba(0, 229, 255, 0.05);
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--accent);
+        margin-bottom: 28px;
+        letter-spacing: 1px;
+      }
+      .hero-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+      h1 {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: clamp(36px, 5vw, 60px);
+        line-height: 1.1;
+        letter-spacing: -2px;
+        margin-bottom: 20px;
+      }
+      h1 .highlight {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .hero p {
+        color: var(--text2);
+        font-size: 18px;
+        max-width: 560px;
+        margin: 0 auto 40px;
+        line-height: 1.6;
+      }
+
+      /* === STATS BAR === */
+      .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 48px;
+      }
+      .stat-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        transition: all 0.3s ease;
+      }
+      .stat-card:hover {
+        border-color: var(--border2);
+        box-shadow: 0 8px 24px rgba(0, 229, 255, 0.1);
+      }
+      .stat-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+      }
+      .stat-label {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--text3);
+        letter-spacing: 1px;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+      }
+      .stat-value {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 26px;
+        color: var(--text);
+        letter-spacing: -1px;
+      }
+      .stat-value .unit {
+        font-size: 14px;
+        color: var(--accent);
+      }
+      .stat-change {
+        font-size: 12px;
+        color: var(--green);
+        margin-top: 4px;
+      }
+
+      /* === SECTION HEADER === */
+      .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+      .section-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        letter-spacing: -0.5px;
+      }
+
+      /* === BTN === */
+      .btn {
+        padding: 11px 22px;
+        border: none;
+        cursor: pointer;
+        border-radius: var(--radius2);
+        font-family: "Manrope", sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .btn-primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent2));
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(0, 229, 255, 0.2);
+      }
+      .btn-primary:hover {
+        opacity: 0.95;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 229, 255, 0.35);
+      }
+      .btn-ghost {
+        background: var(--card2);
+        color: var(--text2);
+        border: 1px solid var(--border);
+      }
+      .btn-ghost:hover {
+        border-color: var(--border2);
+        color: var(--text);
+        background: rgba(28, 35, 64, 0.8);
+      }
+      .btn-danger {
+        background: rgba(255, 82, 82, 0.15);
+        color: var(--danger);
+        border: 1px solid rgba(255, 82, 82, 0.3);
+      }
+      .btn-danger:hover {
+        background: rgba(255, 82, 82, 0.25);
+        transform: translateY(-1px);
+      }
+      .btn-sm {
+        padding: 7px 14px;
+        font-size: 13px;
+      }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+
+      /* === CAMPAIGN GRID === */
+      .campaign-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
+      }
+
+      .campaign-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      }
+      .campaign-card:hover {
+        border-color: var(--border2);
+        transform: translateY(-4px);
+        box-shadow: 0 16px 48px rgba(0, 229, 255, 0.15);
+      }
+      .campaign-card.active-camp::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 229, 255, 0.03),
+          rgba(124, 77, 255, 0.03)
+        );
+        pointer-events: none;
+      }
+
+      .camp-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .camp-id {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--text3);
+      }
+      .status-badge {
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        font-weight: 500;
+      }
+      .status-active {
+        background: rgba(0, 255, 163, 0.1);
+        color: var(--green);
+        border: 1px solid rgba(0, 255, 163, 0.3);
+      }
+      .status-closed {
+        background: rgba(90, 106, 138, 0.2);
+        color: var(--text3);
+        border: 1px solid var(--border);
+      }
+
+      .camp-name {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 18px;
+        margin-bottom: 8px;
+        letter-spacing: -0.3px;
+      }
+      .camp-desc {
+        font-size: 13px;
+        color: var(--text2);
+        line-height: 1.5;
+        margin-bottom: 16px;
+      }
+
+      .camp-progress {
+        margin-bottom: 16px;
+      }
+      .progress-bar-bg {
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        transition: width 0.5s ease;
+      }
+      .progress-labels {
+        display: flex;
+        justify-content: space-between;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--text3);
+        margin-top: 6px;
+      }
+      .progress-pct {
+        color: var(--accent);
+        font-weight: 500;
+      }
+
+      .camp-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 14px;
+        background: var(--bg3);
+        border-radius: var(--radius2);
+      }
+      .camp-stat-item {
+      }
+      .camp-stat-label {
+        font-size: 11px;
+        color: var(--text3);
+        margin-bottom: 2px;
+      }
+      .camp-stat-val {
+        font-family: "DM Mono", monospace;
+        font-size: 14px;
+        color: var(--text);
+        font-weight: 500;
+      }
+      .camp-stat-val.raised {
+        color: var(--accent);
+      }
+      .camp-stat-val.spent {
+        color: var(--accent2);
+      }
+      .camp-stat-val.balance {
+        color: var(--green);
+      }
+
+      .camp-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      /* === MODAL === */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-overlay.open {
+        display: flex;
+        animation: fadeIn 0.2s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .modal {
+        background: var(--card);
+        border: 1px solid var(--border2);
+        border-radius: 16px;
+        padding: 32px;
+        width: 100%;
+        max-width: 540px;
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(20px);
+          opacity: 0;
+        }
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
+      .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+      }
+      .modal-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 20px;
+      }
+      .modal-close {
+        width: 32px;
+        height: 32px;
+        border: none;
+        cursor: pointer;
+        background: var(--bg3);
+        border-radius: 8px;
+        color: var(--text2);
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-close:hover {
+        color: var(--text);
+        background: var(--border);
+      }
+
+      /* === FORM === */
+      .form-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text2);
+        margin-bottom: 8px;
+      }
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 12px 16px;
+        background: var(--bg3);
+        border: 1px solid var(--border);
+        border-radius: var(--radius2);
+        color: var(--text);
+        font-family: "Manrope", sans-serif;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        outline: none;
+      }
+      input:focus,
+      textarea:focus,
+      select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+      }
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+      .input-hint {
+        font-size: 12px;
+        color: var(--text3);
+        margin-top: 6px;
+      }
+      .input-group {
+        position: relative;
+      }
+      .input-suffix {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--accent);
+      }
+
+      /* === TOAST === */
+      #toast-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        padding: 14px 18px;
+        border-radius: var(--radius2);
+        font-size: 14px;
+        font-weight: 500;
+        min-width: 300px;
+        max-width: 400px;
+        animation: slideRight 0.3s ease;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      @keyframes slideRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
+      .toast-success {
+        background: rgba(0, 255, 163, 0.15);
+        border: 1px solid rgba(0, 255, 163, 0.4);
+        color: var(--green);
+      }
+      .toast-error {
+        background: rgba(255, 82, 82, 0.15);
+        border: 1px solid rgba(255, 82, 82, 0.4);
+        color: var(--danger);
+      }
+      .toast-info {
+        background: rgba(0, 229, 255, 0.1);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        color: var(--accent);
+      }
+      .toast-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .toast-msg {
+        line-height: 1.4;
+      }
+
+      /* === TXHASH === */
+      .tx-link {
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--accent);
+        text-decoration: none;
+        word-break: break-all;
+      }
+      .tx-link:hover {
+        text-decoration: underline;
+      }
+
+      /* === TABS === */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 24px;
+      }
+      .tab {
+        padding: 10px 20px;
+        border: none;
+        cursor: pointer;
+        background: none;
+        font-family: "Manrope", sans-serif;
+        font-size: 14px;
+        color: var(--text3);
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        transition: all 0.2s;
+      }
+      .tab:hover {
+        color: var(--text2);
+      }
+      .tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+
+      /* === TABLE === */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .data-table th {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--text3);
+        padding: 10px 16px;
+        text-align: left;
+        font-weight: 500;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border);
+      }
+      .data-table td {
+        padding: 14px 16px;
+        font-size: 13px;
+        color: var(--text2);
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      .data-table tr:last-child td {
+        border-bottom: none;
+      }
+      .data-table tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .addr {
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--text3);
+      }
+      .addr-admin {
+        color: var(--accent2);
+      }
+      .mono {
+        font-family: "DM Mono", monospace;
+      }
+
+      /* === DETAIL PANEL === */
+      .detail-panel {
+        display: none;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 24px;
+        animation: fadeIn 0.2s ease;
+      }
+      .detail-panel.open {
+        display: block;
+      }
+      .detail-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+      }
+      .detail-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 20px;
+      }
+
+      .detail-info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .info-item {
+        padding: 16px;
+        background: var(--bg3);
+        border-radius: var(--radius2);
+      }
+      .info-label {
+        font-size: 11px;
+        color: var(--text3);
+        margin-bottom: 6px;
+        font-family: "DM Mono", monospace;
+      }
+      .info-val {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 600;
+        font-size: 18px;
+      }
+      .info-val.cyan {
+        color: var(--accent);
+      }
+      .info-val.purple {
+        color: var(--accent2);
+      }
+      .info-val.green {
+        color: var(--green);
+      }
+
+      /* === VERIFY BADGE === */
+      .verify-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .verified {
+        background: rgba(0, 255, 163, 0.1);
+        color: var(--green);
+        border: 1px solid rgba(0, 255, 163, 0.3);
+      }
+      .unverified {
+        background: rgba(255, 82, 82, 0.1);
+        color: var(--danger);
+        border: 1px solid rgba(255, 82, 82, 0.3);
+      }
+
+      /* === SETUP PANEL === */
+      .setup-panel {
+        background: var(--card);
+        border: 1px solid var(--border2);
+        border-radius: var(--radius);
+        padding: 32px;
+        text-align: center;
+        margin-bottom: 32px;
+      }
+      .setup-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+      .setup-title {
+        font-family: "Space Grotesk", sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin-bottom: 8px;
+      }
+      .setup-sub {
+        color: var(--text2);
+        margin-bottom: 24px;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .contract-input-row {
+        display: flex;
+        gap: 12px;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      .contract-input-row input {
+        flex: 1;
+      }
+
+      /* === EMPTY STATE === */
+      .empty-state {
+        text-align: center;
+        padding: 48px;
+        color: var(--text3);
+      }
+      .empty-state-icon {
+        font-size: 32px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+      }
+
+      /* === SPINNER === */
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        display: inline-block;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* === PAGE SECTIONS === */
+      .page {
+        display: none;
+      }
+      .page.active {
+        display: block;
+        animation: fadeIn 0.25s ease;
+      }
+
+      /* === ADMIN DASHBOARD === */
+      .admin-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        background: rgba(124, 77, 255, 0.1);
+        border: 1px solid rgba(124, 77, 255, 0.3);
+        border-radius: var(--radius);
+        margin-bottom: 32px;
+      }
+      .admin-icon {
+        font-size: 20px;
+      }
+      .admin-text {
+        font-size: 14px;
+        color: var(--accent2);
+      }
+
+      /* === RESPONSIVE === */
+      @media (max-width: 768px) {
+        header {
+          padding: 14px 16px;
+        }
+        main {
+          padding: 24px 16px 60px;
+        }
+        .stats-bar {
+          grid-template-columns: 1fr 1fr;
+        }
+        .campaign-grid {
+          grid-template-columns: 1fr;
+        }
+        .detail-info-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        nav {
+          display: none;
+        }
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 3px;
+      }
+
+      .hash-pill {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: var(--bg3);
+        color: var(--text3);
+        cursor: pointer;
+        transition: all 0.15s;
+        border: 1px solid var(--border);
+      }
+      .hash-pill:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .evidence-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--accent2);
+        text-decoration: none;
+        padding: 3px 8px;
+        border-radius: 4px;
+        background: rgba(124, 77, 255, 0.1);
+        border: 1px solid rgba(124, 77, 255, 0.3);
+        transition: all 0.15s;
+      }
+      .evidence-link:hover {
+        background: rgba(124, 77, 255, 0.2);
+      }
+
+      .amount-eth {
+        font-family: "DM Mono", monospace;
+        font-weight: 500;
+      }
+      .amount-raised {
+        color: var(--accent);
+      }
+      .amount-spent {
+        color: var(--accent2);
+      }
+      .amount-bal {
+        color: var(--green);
+      }
+
+      .filter-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 20px;
+        align-items: center;
+      }
+      .filter-btn {
+        padding: 6px 14px;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: none;
+        color: var(--text3);
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .filter-btn:hover {
+        border-color: var(--border2);
+        color: var(--text2);
+      }
+      .filter-btn.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: rgba(0, 229, 255, 0.05);
+      }
+
+      .table-container {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+      }
+
+      .balance-bar {
+        margin: 20px 0;
+        padding: 16px 20px;
+        background: var(--bg3);
+        border-radius: var(--radius2);
+        border: 1px solid var(--border);
+      }
+      .balance-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .balance-label {
+        font-size: 13px;
+        color: var(--text2);
+      }
+      .balance-val {
+        font-family: "DM Mono", monospace;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .balance-seg {
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        gap: 2px;
+        margin-top: 8px;
+      }
+      .seg-raised {
+        background: linear-gradient(
+          90deg,
+          var(--accent),
+          rgba(0, 229, 255, 0.5)
+        );
+        border-radius: 4px 0 0 4px;
+      }
+      .seg-spent {
+        background: var(--accent2);
+      }
+      .seg-rem {
+        background: var(--green);
+        border-radius: 0 4px 4px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bg-fx">
+      <div class="bg-orb orb1"></div>
+      <div class="bg-orb orb2"></div>
+      <div class="bg-orb orb3"></div>
+      <div class="grid-overlay"></div>
+    </div>
+
+    <header>
+      <div class="logo">
+        <div class="logo-icon">⛓</div>
+        <div class="logo-text">Chain<span>Charity</span></div>
+      </div>
+      <nav>
+        <button class="nav-btn active" onclick="showPage('campaigns')">
+          Chiến dịch
+        </button>
+        <button class="nav-btn" onclick="showPage('verify')">Xác minh</button>
+        <button class="nav-btn" onclick="showPage('admin')">Quản trị</button>
+      </nav>
+      <div class="header-right">
+        <span class="role-badge" id="roleBadge">ADMIN</span>
+        <button class="wallet-btn" id="walletBtn" onclick="connectWallet()">
+          🦊 Kết nối Ví
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- ======== CAMPAIGNS PAGE ======== -->
+      <div class="page active" id="page-campaigns">
+        <div class="hero">
+          <div class="hero-tag">
+            <div class="hero-dot"></div>
+            SEPOLIA TESTNET • LIVE
+          </div>
+          <h1>
+            Từ thiện <span class="highlight">Minh bạch</span><br />trên
+            Blockchain
+          </h1>
+          <p>
+            Mỗi đồng quyên góp được ghi nhận vĩnh viễn. Không ai có thể thay
+            đổi, không ai có thể giấu.
+          </p>
+        </div>
+
+        <!-- Contract Setup -->
+        <div class="setup-panel" id="setupPanel">
+          <div class="setup-icon">📋</div>
+          <div class="setup-title">Kết nối Smart Contract</div>
+          <div class="setup-sub">
+            Nhập địa chỉ contract <strong>CharityDonationLedger</strong> đã
+            deploy trên Sepolia để bắt đầu
+          </div>
+          <div class="contract-input-row">
+            <input
+              type="text"
+              id="contractInput"
+              placeholder="0x... (Địa chỉ contract)"
+              style="
+                font-family: &quot;DM Mono&quot;, monospace;
+                font-size: 13px;
+              "
+            />
+            <button class="btn btn-primary" onclick="loadContract()">
+              Kết nối
+            </button>
+          </div>
+          <div style="margin-top: 14px; font-size: 12px; color: var(--text3)">
+            Hoặc
+            <a href="#" onclick="loadDemoMode()" style="color: var(--accent)"
+              >dùng chế độ Demo</a
+            >
+            để xem giao diện mẫu
+          </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar" style="display: none">
+          <div class="stat-card">
+            <div class="stat-label">CHIẾN DỊCH</div>
+            <div class="stat-value" id="statCampaigns">—</div>
+            <div class="stat-change" id="statActiveCamps">đang hoạt động</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">TỔNG QUYÊN GÓP</div>
+            <div class="stat-value">
+              <span id="statRaised">—</span> <span class="unit">ETH</span>
+            </div>
+            <div class="stat-change" id="statDonCount">lần quyên góp</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">ĐÃ CHI TIÊU</div>
+            <div class="stat-value">
+              <span id="statSpent">—</span> <span class="unit">ETH</span>
+            </div>
+            <div class="stat-change" id="statExpCount">khoản chi tiêu</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">SỐ DƯ CÒN LẠI</div>
+            <div class="stat-value">
+              <span id="statBalance">—</span> <span class="unit">ETH</span>
+            </div>
+            <div class="stat-change" style="color: var(--green)">
+              ✓ Đã kiểm chứng
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter row -->
+        <div class="section-header" id="campSection" style="display: none">
+          <div class="section-title">Chiến dịch</div>
+          <div style="display: flex; gap: 8px">
+            <button
+              class="filter-btn active"
+              onclick="filterCampaigns('all', this)"
+            >
+              Tất cả
+            </button>
+            <button
+              class="filter-btn"
+              onclick="filterCampaigns('active', this)"
+            >
+              Đang hoạt động
+            </button>
+            <button
+              class="filter-btn"
+              onclick="filterCampaigns('closed', this)"
+            >
+              Đã đóng
+            </button>
+          </div>
+        </div>
+
+        <div class="campaign-grid" id="campaignGrid"></div>
+      </div>
+
+      <!-- ======== VERIFY PAGE ======== -->
+      <div class="page" id="page-verify">
+        <div style="margin-bottom: 32px">
+          <h2
+            style="
+              font-family: &quot;Space Grotesk&quot;, sans-serif;
+              font-weight: 700;
+              font-size: 28px;
+              letter-spacing: -1px;
+              margin-bottom: 8px;
+            "
+          >
+            🔍 Xác minh Minh bạch
+          </h2>
+          <p style="color: var(--text2)">
+            Bất kỳ ai cũng có thể kiểm tra tính chính xác của mọi dữ liệu —
+            không cần ví.
+          </p>
+        </div>
+
+        <div id="verifyContent">
+          <div class="empty-state">
+            <div class="empty-state-icon">🔗</div>
+            <div>Vui lòng kết nối contract trước</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== ADMIN PAGE ======== -->
+      <div class="page" id="page-admin">
+        <div class="admin-header" id="adminHeader" style="display: none">
+          <span class="admin-icon">🛡️</span>
+          <div>
+            <div class="admin-text" style="font-weight: 600">
+              ADMIN PANEL — Chỉ dành cho chủ hợp đồng
+            </div>
+            <div
+              style="font-size: 12px; color: var(--text3); margin-top: 2px"
+              id="ownerDisplay"
+            >
+              Địa chỉ chủ: đang tải...
+            </div>
+          </div>
+        </div>
+
+        <div id="adminContent">
+          <div class="empty-state">
+            <div class="empty-state-icon">🔒</div>
+            <div>Kết nối ví và contract để quản trị</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ======== MODALS ======== -->
+
+    <!-- Donate Modal -->
+    <div class="modal-overlay" id="donateModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">💚 Quyên góp</div>
+          <button class="modal-close" onclick="closeModal('donateModal')">
+            ✕
+          </button>
+        </div>
+        <div
+          style="
+            padding: 12px;
+            background: var(--bg3);
+            border-radius: var(--radius2);
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--text2);
+          "
+        >
+          Chiến dịch:
+          <strong id="donateTargetName" style="color: var(--text)"></strong>
+        </div>
+        <div class="form-group">
+          <label>Số tiền quyên góp (ETH)</label>
+          <div class="input-group">
+            <input
+              type="number"
+              id="donateAmount"
+              placeholder="0.01"
+              step="0.001"
+              min="0.001"
+            />
+            <span class="input-suffix">ETH</span>
+          </div>
+          <div class="input-hint">
+            Số dư ví của bạn:
+            <span id="walletBalance" style="color: var(--accent)">—</span> ETH
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Lời nhắn (tùy chọn)</label>
+          <textarea
+            id="donateMessage"
+            placeholder="Gửi lời chúc tốt đẹp đến những người được hỗ trợ..."
+          ></textarea>
+        </div>
+        <div style="display: flex; gap: 12px">
+          <button
+            class="btn btn-ghost"
+            style="flex: 1"
+            onclick="closeModal('donateModal')"
+          >
+            Hủy
+          </button>
+          <button
+            class="btn btn-primary"
+            style="flex: 2"
+            id="donateBtnSubmit"
+            onclick="submitDonate()"
+          >
+            ❤️ Quyên góp ngay
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create Campaign Modal -->
+    <div class="modal-overlay" id="createCampModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">🚀 Tạo Chiến dịch Mới</div>
+          <button class="modal-close" onclick="closeModal('createCampModal')">
+            ✕
+          </button>
+        </div>
+        <div class="form-group">
+          <label>Tên chiến dịch *</label>
+          <input
+            type="text"
+            id="campName"
+            placeholder="VD: Hỗ trợ đồng bào miền Trung lũ lụt"
+          />
+        </div>
+        <div class="form-group">
+          <label>Mô tả mục đích *</label>
+          <textarea
+            id="campDesc"
+            placeholder="Mô tả chi tiết mục đích và cách sử dụng số tiền quyên góp..."
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label>Mục tiêu quyên góp (ETH) *</label>
+          <div class="input-group">
+            <input
+              type="number"
+              id="campTarget"
+              placeholder="1.0"
+              step="0.01"
+              min="0.001"
+            />
+            <span class="input-suffix">ETH</span>
+          </div>
+          <div class="input-hint">Nhập 0 nếu không có mục tiêu cụ thể</div>
+        </div>
+        <div style="display: flex; gap: 12px">
+          <button
+            class="btn btn-ghost"
+            style="flex: 1"
+            onclick="closeModal('createCampModal')"
+          >
+            Hủy
+          </button>
+          <button
+            class="btn btn-primary"
+            style="flex: 2"
+            onclick="submitCreateCampaign()"
+          >
+            ✨ Tạo chiến dịch
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Record Expense Modal -->
+    <div class="modal-overlay" id="expenseModal">
+      <div class="modal">
+        <div class="modal-header">
+          <div class="modal-title">📝 Ghi nhận Chi tiêu</div>
+          <button class="modal-close" onclick="closeModal('expenseModal')">
+            ✕
+          </button>
+        </div>
+        <div
+          style="
+            padding: 12px;
+            background: var(--bg3);
+            border-radius: var(--radius2);
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: var(--text2);
+          "
+        >
+          Chiến dịch:
+          <strong id="expenseTargetName" style="color: var(--text)"></strong>
+          <br />Số dư khả dụng:
+          <strong id="expenseAvailBal" style="color: var(--green)"></strong> ETH
+        </div>
+        <div class="form-group">
+          <label>Số tiền chi (ETH) *</label>
+          <div class="input-group">
+            <input
+              type="number"
+              id="expenseAmount"
+              placeholder="0.1"
+              step="0.001"
+              min="0.001"
+            />
+            <span class="input-suffix">ETH</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mục đích chi tiêu *</label>
+          <input
+            type="text"
+            id="expensePurpose"
+            placeholder="VD: Mua 100 thùng mì gói, giao tận nơi"
+          />
+        </div>
+        <div class="form-group">
+          <label>IPFS Evidence Hash (bytes32) *</label>
+          <input
+            type="text"
+            id="expenseEvidence"
+            placeholder="0x... hoặc QmXxx..."
+          />
+          <div class="input-hint">
+            Upload chứng từ lên IPFS (Pinata/Infura), lấy CID và chuyển sang
+            bytes32
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px">
+          <button
+            class="btn btn-ghost"
+            style="flex: 1"
+            onclick="closeModal('expenseModal')"
+          >
+            Hủy
+          </button>
+          <button
+            class="btn btn-primary"
+            style="flex: 2"
+            onclick="submitExpense()"
+          >
+            ✅ Ghi nhận chi tiêu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campaign Detail Modal -->
+    <div class="modal-overlay" id="detailModal">
+      <div class="modal" style="max-width: 700px">
+        <div class="modal-header">
+          <div class="modal-title" id="detailModalTitle">
+            Chi tiết Chiến dịch
+          </div>
+          <button class="modal-close" onclick="closeModal('detailModal')">
+            ✕
+          </button>
+        </div>
+        <div id="detailModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <script>
+      // ======================================================
+      // STATE & CONFIG
+      // ======================================================
+      const ABI = [
+        "function owner() view returns (address)",
+        "function campaignCounter() view returns (uint256)",
+        "function getCampaignDetails(uint256) view returns (uint256,string,string,uint256,uint256,uint256,bool,uint256)",
+        "function getDonationCount(uint256) view returns (uint256)",
+        "function getExpenseCount(uint256) view returns (uint256)",
+        "function getDonations(uint256) view returns (tuple(address donor,uint256 amount,string message,uint256 timestamp,uint256 campaignId)[])",
+        "function getExpenses(uint256) view returns (tuple(uint256 amount,string purpose,bytes32 evidenceHash,uint256 timestamp,address spender,uint256 campaignId)[])",
+        "function getRemainingBalance(uint256) view returns (uint256)",
+        "function totalDonatedByAddress(address) view returns (uint256)",
+        "function createCampaign(string,string,uint256) returns (uint256)",
+        "function donate(uint256,string) payable",
+        "function recordExpense(uint256,uint256,string,bytes32)",
+        "function closeCampaign(uint256)",
+        "event CampaignCreated(uint256 indexed campaignId, string name, uint256 targetAmount)",
+        "event DonationReceived(uint256 indexed campaignId, address indexed donor, uint256 amount)",
+        "event ExpenseRecorded(uint256 indexed campaignId, uint256 amount, string purpose)",
+        "event CampaignClosed(uint256 indexed campaignId)",
+      ];
+
+      let provider = null,
+        signer = null,
+        contract = null;
+      let userAddress = null,
+        ownerAddress = null;
+      let campaigns = [];
+      let demoMode = false;
+      let currentDonateId = null,
+        currentExpenseId = null;
+      let filterMode = "all";
+
+      // ======================================================
+      // DEMO DATA
+      // ======================================================
+      const DEMO_CAMPAIGNS = [
+        {
+          id: 0,
+          name: "Hỗ trợ đồng bào lũ lụt miền Trung",
+          description:
+            "Cung cấp lương thực, nước uống và nhu yếu phẩm thiết yếu cho hơn 500 hộ gia đình bị ảnh hưởng bởi lũ lụt tại Quảng Nam, Quảng Ngãi.",
+          targetAmount: BigInt("3000000000000000000"),
+          raisedAmount: BigInt("2150000000000000000"),
+          spentAmount: BigInt("1400000000000000000"),
+          isActive: true,
+          createdAt: BigInt(Date.now() / 1000 - 864000),
+        },
+        {
+          id: 1,
+          name: "Học bổng trẻ em vùng cao 2026",
+          description:
+            "Trao học bổng cho 200 em học sinh nghèo vùng núi cao tỉnh Hà Giang, Lai Châu, giúp các em tiếp tục con đường học vấn.",
+          targetAmount: BigInt("1000000000000000000"),
+          raisedAmount: BigInt("1050000000000000000"),
+          spentAmount: BigInt("890000000000000000"),
+          isActive: false,
+          createdAt: BigInt(Date.now() / 1000 - 2592000),
+        },
+        {
+          id: 2,
+          name: "Xây dựng nhà tình thương Cà Mau",
+          description:
+            "Xây dựng 20 căn nhà tình thương cho các hộ gia đình khó khăn tại tỉnh Cà Mau, đảm bảo chỗ ở an toàn trước mùa bão.",
+          targetAmount: BigInt("5000000000000000000"),
+          raisedAmount: BigInt("870000000000000000"),
+          spentAmount: BigInt("0"),
+          isActive: true,
+          createdAt: BigInt(Date.now() / 1000 - 172800),
+        },
+      ];
+
+      const DEMO_DONATIONS = {
+        0: [
+          {
+            donor: "0x7D3b4A2c9F1e8B5d6E0a3C7F2b1A4D8E9c0F5B2a",
+            amount: BigInt("500000000000000000"),
+            message: "Chúc đồng bào mau vượt qua khó khăn!",
+            timestamp: BigInt(Date.now() / 1000 - 700000),
+            campaignId: BigInt(0),
+          },
+          {
+            donor: "0x3F8c1B5E7A2d9C4f6B0E3A7D1F4B8C2E5A9D3F7b",
+            amount: BigInt("300000000000000000"),
+            message: "",
+            timestamp: BigInt(Date.now() / 1000 - 600000),
+            campaignId: BigInt(0),
+          },
+          {
+            donor: "0xA1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B0",
+            amount: BigInt("850000000000000000"),
+            message: "Ủng hộ nhiệt tình!",
+            timestamp: BigInt(Date.now() / 1000 - 500000),
+            campaignId: BigInt(0),
+          },
+          {
+            donor: "0x9E8D7C6B5A4F3E2D1C0B9A8F7E6D5C4B3A2F1E0D",
+            amount: BigInt("500000000000000000"),
+            message: "Một chút lòng thành",
+            timestamp: BigInt(Date.now() / 1000 - 400000),
+            campaignId: BigInt(0),
+          },
+        ],
+        1: [
+          {
+            donor: "0x4C5D6E7F8A9B0C1D2E3F4A5B6C7D8E9F0A1B2C3D",
+            amount: BigInt("500000000000000000"),
+            message: "Vì tương lai các em",
+            timestamp: BigInt(Date.now() / 1000 - 2500000),
+            campaignId: BigInt(1),
+          },
+          {
+            donor: "0x7D3b4A2c9F1e8B5d6E0a3C7F2b1A4D8E9c0F5B2a",
+            amount: BigInt("550000000000000000"),
+            message: "",
+            timestamp: BigInt(Date.now() / 1000 - 2400000),
+            campaignId: BigInt(1),
+          },
+        ],
+        2: [
+          {
+            donor: "0x1A2B3C4D5E6F7A8B9C0D1E2F3A4B5C6D7E8F9A0B",
+            amount: BigInt("870000000000000000"),
+            message: "Xây nhà để đón mùa bão an toàn",
+            timestamp: BigInt(Date.now() / 1000 - 150000),
+            campaignId: BigInt(2),
+          },
+        ],
+      };
+
+      const DEMO_EXPENSES = {
+        0: [
+          {
+            amount: BigInt("700000000000000000"),
+            purpose: "Mua 500 thùng mì gói + nước uống giao tận nơi",
+            evidenceHash:
+              "0x5f3d2e1a7b9c4d6e8f0a2b4c6d8e0f1a3b5c7d9e2f4a6b8c0d2e4f6a8b0c2d4e6",
+            timestamp: BigInt(Date.now() / 1000 - 620000),
+            spender: "0xOwner000",
+            campaignId: BigInt(0),
+          },
+          {
+            amount: BigInt("700000000000000000"),
+            purpose: "Thuê xe vận chuyển nhu yếu phẩm 3 đợt",
+            evidenceHash:
+              "0x1a3b5c7d9e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8f0a2b4c6d8e0f1a3b5",
+            timestamp: BigInt(Date.now() / 1000 - 520000),
+            spender: "0xOwner000",
+            campaignId: BigInt(0),
+          },
+        ],
+        1: [
+          {
+            amount: BigInt("890000000000000000"),
+            purpose: "Trao 200 suất học bổng 4.45M/em × 200 em",
+            evidenceHash:
+              "0x9e2f4a6b8c0d2e4f6a8b0c2d4e6f8a0b2c4d6e8f0a2b4c6d8e0f1a3b5c7d9e2f4",
+            timestamp: BigInt(Date.now() / 1000 - 2350000),
+            spender: "0xOwner000",
+            campaignId: BigInt(1),
+          },
+        ],
+        2: [],
+      };
+
+      // ======================================================
+      // WALLET & CONTRACT
+      // ======================================================
+      async function connectWallet() {
+        if (typeof window.ethereum === "undefined") {
+          toast(
+            "error",
+            "🦊 MetaMask chưa được cài đặt! Vui lòng cài MetaMask Extension.",
+            5000,
+          );
+          return;
+        }
+        try {
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          provider = new ethers.BrowserProvider(window.ethereum);
+          signer = await provider.getSigner();
+          userAddress = await signer.getAddress();
+
+          const chainId = (await provider.getNetwork()).chainId;
+          if (chainId !== BigInt(11155111)) {
+            toast(
+              "error",
+              "⚠️ Vui lòng chuyển sang mạng Sepolia Testnet (Chain ID: 11155111)",
+            );
+            return;
+          }
+
+          updateWalletUI();
+          toast("success", `✅ Đã kết nối: ${shortAddr(userAddress)}`);
+
+          const bal = await provider.getBalance(userAddress);
+          document.getElementById("walletBalance").textContent = parseFloat(
+            ethers.formatEther(bal),
+          ).toFixed(4);
+
+          if (contract) {
+            ownerAddress = await contract.owner();
+            updateRoleUI();
+          }
+        } catch (e) {
+          toast("error", "❌ Không thể kết nối ví: " + (e.message || e));
+        }
+      }
+
+      function updateWalletUI() {
+        const btn = document.getElementById("walletBtn");
+        if (userAddress) {
+          btn.textContent = "🟢 " + shortAddr(userAddress);
+          btn.classList.add("connected");
+        }
+      }
+
+      function updateRoleUI() {
+        const badge = document.getElementById("roleBadge");
+        const ownerDisp = document.getElementById("ownerDisplay");
+        if (ownerAddress) {
+          ownerDisp.textContent = "Địa chỉ chủ: " + shortAddr(ownerAddress);
+          if (
+            userAddress &&
+            userAddress.toLowerCase() === ownerAddress.toLowerCase()
+          ) {
+            badge.className = "role-badge admin";
+            badge.textContent = "🛡️ ADMIN";
+          } else if (userAddress) {
+            badge.className = "role-badge donor";
+            badge.textContent = "💙 DONOR";
+          }
+        }
+      }
+
+      async function loadContract() {
+        const addr = document.getElementById("contractInput").value.trim();
+        if (!addr || !addr.startsWith("0x")) {
+          toast("error", "⚠️ Địa chỉ contract không hợp lệ");
+          return;
+        }
+        if (!userAddress) {
+          toast(
+            "error",
+            "⚠️ Vui lòng kết nối MetaMask trước (nút 🦊 Kết nối Ví)",
+          );
+          return;
+        }
+        try {
+          if (!provider) {
+            provider = new ethers.BrowserProvider(window.ethereum);
+          }
+          contract = new ethers.Contract(addr, ABI, signer || provider);
+          ownerAddress = await contract.owner();
+          toast("info", "🔗 Đang tải dữ liệu contract...");
+          await loadAllData();
+          document.getElementById("setupPanel").style.display = "none";
+          document.getElementById("statsBar").style.display = "grid";
+          document.getElementById("campSection").style.display = "flex";
+          document.getElementById("adminHeader").style.display = "flex";
+          updateRoleUI();
+          renderAdminPanel();
+          renderVerifyPage();
+        } catch (e) {
+          toast("error", "❌ Không thể kết nối contract: " + (e.message || e));
+        }
+      }
+
+      async function loadDemoMode() {
+        demoMode = true;
+        campaigns = DEMO_CAMPAIGNS;
+        ownerAddress = "0xOwner000DeadBeef1234567890AbCdEf12345678";
+        document.getElementById("setupPanel").style.display = "none";
+        document.getElementById("statsBar").style.display = "grid";
+        document.getElementById("campSection").style.display = "flex";
+        document.getElementById("adminHeader").style.display = "flex";
+
+        if (!userAddress) {
+          userAddress = "0x7D3b4A2c9F1e8B5d6E0a3C7F2b1A4D8E9c0F5B2a";
+          const btn = document.getElementById("walletBtn");
+          btn.textContent = "🟡 Demo Mode";
+          btn.classList.add("connected");
+        }
+
+        updateStats();
+        renderCampaigns();
+        renderAdminPanel();
+        renderVerifyPage();
+        toast(
+          "info",
+          "🎭 Chế độ Demo — Dữ liệu mẫu, giao dịch sẽ được giả lập",
+        );
+      }
+
+      async function loadAllData() {
+        const count = Number(await contract.campaignCounter());
+        campaigns = [];
+        for (let i = 0; i < count; i++) {
+          const d = await contract.getCampaignDetails(i);
+          campaigns.push({
+            id: i,
+            name: d[1],
+            description: d[2],
+            targetAmount: d[3],
+            raisedAmount: d[4],
+            spentAmount: d[5],
+            isActive: d[6],
+            createdAt: d[7],
+          });
+        }
+        updateStats();
+        renderCampaigns();
+      }
+
+      function updateStats() {
+        let totalR = BigInt(0),
+          totalS = BigInt(0),
+          active = 0;
+        campaigns.forEach((c) => {
+          totalR += c.raisedAmount;
+          totalS += c.spentAmount;
+          if (c.isActive) active++;
+        });
+        document.getElementById("statCampaigns").textContent = campaigns.length;
+        document.getElementById("statActiveCamps").textContent =
+          active + " đang hoạt động";
+        document.getElementById("statRaised").textContent = fmtEth(totalR);
+        document.getElementById("statSpent").textContent = fmtEth(totalS);
+        document.getElementById("statBalance").textContent = fmtEth(
+          totalR - totalS,
+        );
+      }
+
+      // ======================================================
+      // RENDER CAMPAIGNS
+      // ======================================================
+      function renderCampaigns() {
+        const grid = document.getElementById("campaignGrid");
+        let list = campaigns;
+        if (filterMode === "active") list = campaigns.filter((c) => c.isActive);
+        if (filterMode === "closed")
+          list = campaigns.filter((c) => !c.isActive);
+
+        if (!list.length) {
+          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+      <div class="empty-state-icon">📭</div>
+      <div>Chưa có chiến dịch nào</div>
+    </div>`;
+          return;
+        }
+
+        grid.innerHTML = list
+          .map((c) => {
+            const raised = parseFloat(ethers.formatEther(c.raisedAmount));
+            const target = parseFloat(ethers.formatEther(c.targetAmount));
+            const spent = parseFloat(ethers.formatEther(c.spentAmount));
+            const bal = raised - spent;
+            const pct = target > 0 ? Math.min(100, (raised / target) * 100) : 0;
+            const age = timeAgo(Number(c.createdAt));
+            return `
+    <div class="campaign-card ${c.isActive ? "active-camp" : ""}" onclick="showCampaignDetail(${c.id})">
+      <div class="camp-header">
+        <div class="camp-id">ID #${c.id} · ${age}</div>
+        <span class="status-badge ${c.isActive ? "status-active" : "status-closed"}">${c.isActive ? "🟢 Hoạt động" : "⚫ Đã đóng"}</span>
+      </div>
+      <div class="camp-name">${c.name}</div>
+      <div class="camp-desc">${c.description.slice(0, 120)}${c.description.length > 120 ? "..." : ""}</div>
+      ${
+        target > 0
+          ? `
+      <div class="camp-progress">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%"></div></div>
+        <div class="progress-labels">
+          <span>${raised.toFixed(4)} / ${target.toFixed(2)} ETH</span>
+          <span class="progress-pct">${pct.toFixed(1)}%</span>
+        </div>
+      </div>`
+          : ""
+      }
+      <div class="camp-stats">
+        <div class="camp-stat-item">
+          <div class="camp-stat-label">Quyên góp</div>
+          <div class="camp-stat-val raised">${raised.toFixed(4)} ETH</div>
+        </div>
+        <div class="camp-stat-item">
+          <div class="camp-stat-label">Đã chi</div>
+          <div class="camp-stat-val spent">${spent.toFixed(4)} ETH</div>
+        </div>
+        <div class="camp-stat-item">
+          <div class="camp-stat-label">Còn lại</div>
+          <div class="camp-stat-val balance">${bal.toFixed(4)} ETH</div>
+        </div>
+        <div class="camp-stat-item">
+          <div class="camp-stat-label">Mục tiêu</div>
+          <div class="camp-stat-val">${target > 0 ? target.toFixed(2) + " ETH" : "Không giới hạn"}</div>
+        </div>
+      </div>
+      <div class="camp-actions" onclick="event.stopPropagation()">
+        <button class="btn btn-sm btn-ghost" onclick="showCampaignDetail(${c.id})">📊 Chi tiết</button>
+        ${c.isActive ? `<button class="btn btn-sm btn-primary" onclick="openDonate(${c.id})">💚 Quyên góp</button>` : ""}
+      </div>
+    </div>`;
+          })
+          .join("");
+      }
+
+      function filterCampaigns(mode, el) {
+        filterMode = mode;
+        document
+          .querySelectorAll(".filter-btn")
+          .forEach((b) => b.classList.remove("active"));
+        el.classList.add("active");
+        renderCampaigns();
+      }
+
+      // ======================================================
+      // CAMPAIGN DETAIL
+      // ======================================================
+      async function showCampaignDetail(id) {
+        const c = campaigns.find((x) => x.id === id);
+        if (!c) return;
+
+        const raised = parseFloat(ethers.formatEther(c.raisedAmount));
+        const spent = parseFloat(ethers.formatEther(c.spentAmount));
+        const target = parseFloat(ethers.formatEther(c.targetAmount));
+        const bal = raised - spent;
+
+        let donations = [],
+          expenses = [];
+        if (demoMode) {
+          donations = DEMO_DONATIONS[id] || [];
+          expenses = DEMO_EXPENSES[id] || [];
+        } else if (contract) {
+          try {
+            [donations, expenses] = await Promise.all([
+              contract.getDonations(id),
+              contract.getExpenses(id),
+            ]);
+          } catch (e) {}
+        }
+
+        const totalDon = donations.reduce(
+          (s, d) => s + parseFloat(ethers.formatEther(d.amount)),
+          0,
+        );
+        const totalExp = expenses.reduce(
+          (s, e) => s + parseFloat(ethers.formatEther(e.amount)),
+          0,
+        );
+        const donVerified = Math.abs(totalDon - raised) < 0.00001;
+        const expVerified = Math.abs(totalExp - spent) < 0.00001;
+
+        document.getElementById("detailModalTitle").textContent = c.name;
+        document.getElementById("detailModalContent").innerHTML = `
+    <div class="detail-info-grid">
+      <div class="info-item">
+        <div class="info-label">QUYÊN GÓP</div>
+        <div class="info-val cyan">${raised.toFixed(4)}</div>
+        <div style="font-size:12px;color:var(--text3)">ETH</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">ĐÃ CHI</div>
+        <div class="info-val purple">${spent.toFixed(4)}</div>
+        <div style="font-size:12px;color:var(--text3)">ETH</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">SỐ DƯ</div>
+        <div class="info-val green">${bal.toFixed(4)}</div>
+        <div style="font-size:12px;color:var(--text3)">ETH</div>
+      </div>
+    </div>
+
+    <div class="balance-bar">
+      <div class="balance-row">
+        <span class="balance-label">Phân bổ nguồn quỹ</span>
+        <span class="balance-val">${target > 0 ? ((raised / target) * 100).toFixed(1) + "%" : "Không giới hạn"}</span>
+      </div>
+      <div class="balance-seg">
+        ${
+          raised > 0
+            ? `
+        <div class="seg-spent" style="width:${(spent / raised) * 100}%"></div>
+        <div class="seg-rem" style="width:${(bal / raised) * 100}%"></div>
+        `
+            : '<div style="width:100%;background:var(--border);border-radius:4px"></div>'
+        }
+      </div>
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--text3)">
+        <span><span style="color:var(--accent2)">■</span> Đã chi ${spent.toFixed(4)} ETH</span>
+        <span><span style="color:var(--green)">■</span> Còn lại ${bal.toFixed(4)} ETH</span>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchDetailTab(this,'tab-don-${id}')">💰 Quyên góp (${donations.length})</button>
+      <button class="tab" onclick="switchDetailTab(this,'tab-exp-${id}')">📝 Chi tiêu (${expenses.length})</button>
+    </div>
+
+    <div id="tab-don-${id}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--text2)">${donations.length} giao dịch · Tổng: ${totalDon.toFixed(4)} ETH</span>
+        <span class="verify-badge ${donVerified ? "verified" : "unverified"}">
+          ${donVerified ? "✓ Khớp 100%" : "⚠ Sai lệch"}
+        </span>
+      </div>
+      ${
+        donations.length
+          ? `
+      <div class="table-container">
+        <table class="data-table">
+          <thead><tr>
+            <th>NGƯỜI QUYÊN GÓP</th>
+            <th>SỐ TIỀN</th>
+            <th>LỜI NHẮN</th>
+            <th>THỜI GIAN</th>
+          </tr></thead>
+          <tbody>
+            ${donations
+              .map(
+                (d) => `<tr>
+              <td><span class="addr">${shortAddr(d.donor)}</span></td>
+              <td><span class="amount-eth amount-raised">${parseFloat(ethers.formatEther(d.amount)).toFixed(4)} ETH</span></td>
+              <td style="color:var(--text3);font-style:italic">${d.message || "—"}</td>
+              <td class="mono" style="font-size:11px;color:var(--text3)">${fmtDate(Number(d.timestamp))}</td>
+            </tr>`,
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>`
+          : '<div class="empty-state"><div class="empty-state-icon">📭</div><div>Chưa có quyên góp</div></div>'
+      }
+    </div>
+
+    <div id="tab-exp-${id}" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--text2)">${expenses.length} khoản chi · Tổng: ${totalExp.toFixed(4)} ETH</span>
+        <span class="verify-badge ${expVerified ? "verified" : "unverified"}">
+          ${expVerified ? "✓ Khớp 100%" : "⚠ Sai lệch"}
+        </span>
+      </div>
+      ${
+        expenses.length
+          ? `
+      <div class="table-container">
+        <table class="data-table">
+          <thead><tr>
+            <th>MỤC ĐÍCH</th>
+            <th>SỐ TIỀN</th>
+            <th>CHỨNG TỪ</th>
+            <th>THỜI GIAN</th>
+          </tr></thead>
+          <tbody>
+            ${expenses
+              .map((e) => {
+                const hashStr =
+                  typeof e.evidenceHash === "string"
+                    ? e.evidenceHash
+                    : "0x" + e.evidenceHash.toString(16).padStart(64, "0");
+                return `<tr>
+                <td style="max-width:200px">${e.purpose}</td>
+                <td><span class="amount-eth amount-spent">${parseFloat(ethers.formatEther(e.amount)).toFixed(4)} ETH</span></td>
+                <td>
+                  <a class="evidence-link" href="https://ipfs.io/ipfs/${hashStr}" target="_blank">
+                    🔗 IPFS
+                  </a>
+                  <div class="hash-pill" style="margin-top:4px" onclick="copyText('${hashStr}')" title="${hashStr}">
+                    ${hashStr.slice(0, 16)}...
+                  </div>
+                </td>
+                <td class="mono" style="font-size:11px;color:var(--text3)">${fmtDate(Number(e.timestamp))}</td>
+              </tr>`;
+              })
+              .join("")}
+          </tbody>
+        </table>
+      </div>`
+          : '<div class="empty-state"><div class="empty-state-icon">📭</div><div>Chưa có chi tiêu</div></div>'
+      }
+    </div>
+  `;
+        openModal("detailModal");
+      }
+
+      function switchDetailTab(el, tabId) {
+        el.parentElement
+          .querySelectorAll(".tab")
+          .forEach((t) => t.classList.remove("active"));
+        el.classList.add("active");
+        const modal = document.getElementById("detailModalContent");
+        modal
+          .querySelectorAll('[id^="tab-"]')
+          .forEach((t) => (t.style.display = "none"));
+        document.getElementById(tabId).style.display = "block";
+      }
+
+      // ======================================================
+      // DONATE
+      // ======================================================
+      function openDonate(id) {
+        const c = campaigns.find((x) => x.id === id);
+        currentDonateId = id;
+        document.getElementById("donateTargetName").textContent = c.name;
+        document.getElementById("donateAmount").value = "";
+        document.getElementById("donateMessage").value = "";
+        if (userAddress && !demoMode && provider) {
+          provider.getBalance(userAddress).then((b) => {
+            document.getElementById("walletBalance").textContent = parseFloat(
+              ethers.formatEther(b),
+            ).toFixed(4);
+          });
+        }
+        openModal("donateModal");
+      }
+
+      async function submitDonate() {
+        const amount = document.getElementById("donateAmount").value;
+        const msg = document.getElementById("donateMessage").value;
+        if (!amount || parseFloat(amount) <= 0) {
+          toast("error", "⚠️ Nhập số tiền hợp lệ");
+          return;
+        }
+
+        const btn = document.getElementById("donateBtnSubmit");
+        btn.innerHTML = '<span class="spinner"></span> Đang gửi...';
+        btn.disabled = true;
+
+        try {
+          if (demoMode) {
+            await sleep(1500);
+            const c = campaigns.find((x) => x.id === currentDonateId);
+            c.raisedAmount += ethers.parseEther(amount);
+            DEMO_DONATIONS[currentDonateId] =
+              DEMO_DONATIONS[currentDonateId] || [];
+            DEMO_DONATIONS[currentDonateId].push({
+              donor: userAddress || "0xDemo",
+              amount: ethers.parseEther(amount),
+              message: msg,
+              timestamp: BigInt(Math.floor(Date.now() / 1000)),
+              campaignId: BigInt(currentDonateId),
+            });
+            closeModal("donateModal");
+            toast("success", `✅ Đã quyên góp ${amount} ETH! (Demo)`);
+            updateStats();
+            renderCampaigns();
+          } else {
+            if (!signer || !contract) {
+              toast("error", "Chưa kết nối ví hoặc contract");
+              return;
+            }
+            const tx = await contract
+              .connect(signer)
+              .donate(currentDonateId, msg, {
+                value: ethers.parseEther(amount),
+              });
+            closeModal("donateModal");
+            toast(
+              "info",
+              `⏳ Đang xử lý... <a class="tx-link" href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">${shortHash(tx.hash)}</a>`,
+            );
+            await tx.wait();
+            toast("success", `✅ Quyên góp thành công! ${amount} ETH`);
+            await loadAllData();
+          }
+        } catch (e) {
+          toast(
+            "error",
+            "❌ Lỗi: " + (e.reason || e.message || "Giao dịch thất bại"),
+          );
+        }
+
+        btn.innerHTML = "❤️ Quyên góp ngay";
+        btn.disabled = false;
+      }
+
+      // ======================================================
+      // CREATE CAMPAIGN
+      // ======================================================
+      async function submitCreateCampaign() {
+        const name = document.getElementById("campName").value.trim();
+        const desc = document.getElementById("campDesc").value.trim();
+        const target = document.getElementById("campTarget").value;
+        if (!name) {
+          toast("error", "⚠️ Nhập tên chiến dịch");
+          return;
+        }
+        if (!desc) {
+          toast("error", "⚠️ Nhập mô tả");
+          return;
+        }
+        if (!target || parseFloat(target) < 0) {
+          toast("error", "⚠️ Nhập mục tiêu hợp lệ");
+          return;
+        }
+
+        try {
+          if (demoMode) {
+            await sleep(1200);
+            const id = campaigns.length;
+            campaigns.push({
+              id,
+              name,
+              description: desc,
+              targetAmount: ethers.parseEther(target || "0"),
+              raisedAmount: BigInt(0),
+              spentAmount: BigInt(0),
+              isActive: true,
+              createdAt: BigInt(Math.floor(Date.now() / 1000)),
+            });
+            DEMO_DONATIONS[id] = [];
+            DEMO_EXPENSES[id] = [];
+            closeModal("createCampModal");
+            toast("success", `✅ Chiến dịch "${name}" đã được tạo! (Demo)`);
+            updateStats();
+            renderCampaigns();
+            renderAdminPanel();
+          } else {
+            if (!signer || !contract) {
+              toast("error", "Chưa kết nối ví hoặc contract");
+              return;
+            }
+            const c = contract.connect(signer);
+            const targetWei =
+              parseFloat(target) > 0 ? ethers.parseEther(target) : BigInt(0);
+            const tx = await c.createCampaign(name, desc, targetWei);
+            closeModal("createCampModal");
+            toast(
+              "info",
+              `⏳ Đang tạo... <a class="tx-link" href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">${shortHash(tx.hash)}</a>`,
+            );
+            await tx.wait();
+            toast("success", `✅ Chiến dịch "${name}" đã được tạo!`);
+            await loadAllData();
+            renderAdminPanel();
+          }
+        } catch (e) {
+          toast("error", "❌ Lỗi: " + (e.reason || e.message || "Thất bại"));
+        }
+      }
+
+      // ======================================================
+      // RECORD EXPENSE
+      // ======================================================
+      function openExpense(id) {
+        const c = campaigns.find((x) => x.id === id);
+        currentExpenseId = id;
+        const bal = parseFloat(
+          ethers.formatEther(c.raisedAmount - c.spentAmount),
+        );
+        document.getElementById("expenseTargetName").textContent = c.name;
+        document.getElementById("expenseAvailBal").textContent = bal.toFixed(4);
+        document.getElementById("expenseAmount").value = "";
+        document.getElementById("expensePurpose").value = "";
+        document.getElementById("expenseEvidence").value = "";
+        openModal("expenseModal");
+      }
+
+      async function submitExpense() {
+        const amount = document.getElementById("expenseAmount").value;
+        const purpose = document.getElementById("expensePurpose").value.trim();
+        let evidence = document.getElementById("expenseEvidence").value.trim();
+        if (!amount || parseFloat(amount) <= 0) {
+          toast("error", "⚠️ Nhập số tiền hợp lệ");
+          return;
+        }
+        if (!purpose) {
+          toast("error", "⚠️ Nhập mục đích chi tiêu");
+          return;
+        }
+        if (!evidence) {
+          toast("error", "⚠️ Nhập evidence hash");
+          return;
+        }
+
+        // Pad to bytes32
+        if (!evidence.startsWith("0x")) evidence = "0x" + evidence;
+        if (evidence.length < 66)
+          evidence = evidence + "0".repeat(66 - evidence.length);
+
+        try {
+          if (demoMode) {
+            const c = campaigns.find((x) => x.id === currentExpenseId);
+            const bal = c.raisedAmount - c.spentAmount;
+            if (ethers.parseEther(amount) > bal) {
+              toast("error", "❌ Không đủ số dư!");
+              return;
+            }
+            await sleep(1200);
+            c.spentAmount += ethers.parseEther(amount);
+            DEMO_EXPENSES[currentExpenseId] =
+              DEMO_EXPENSES[currentExpenseId] || [];
+            DEMO_EXPENSES[currentExpenseId].push({
+              amount: ethers.parseEther(amount),
+              purpose,
+              evidenceHash: evidence,
+              timestamp: BigInt(Math.floor(Date.now() / 1000)),
+              spender: userAddress || "0xAdmin",
+              campaignId: BigInt(currentExpenseId),
+            });
+            closeModal("expenseModal");
+            toast("success", `✅ Đã ghi nhận chi tiêu ${amount} ETH (Demo)`);
+            updateStats();
+            renderCampaigns();
+            renderAdminPanel();
+          } else {
+            if (!signer || !contract) {
+              toast("error", "Chưa kết nối");
+              return;
+            }
+            const tx = await contract
+              .connect(signer)
+              .recordExpense(
+                currentExpenseId,
+                ethers.parseEther(amount),
+                purpose,
+                evidence,
+              );
+            closeModal("expenseModal");
+            toast(
+              "info",
+              `⏳ <a class="tx-link" href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">${shortHash(tx.hash)}</a>`,
+            );
+            await tx.wait();
+            toast("success", `✅ Chi tiêu đã được ghi nhận!`);
+            await loadAllData();
+            renderAdminPanel();
+          }
+        } catch (e) {
+          toast("error", "❌ " + (e.reason || e.message || "Thất bại"));
+        }
+      }
+
+      // ======================================================
+      // CLOSE CAMPAIGN
+      // ======================================================
+      async function closeCampaign(id) {
+        if (!confirm("Đóng chiến dịch này? Hành động này không thể hoàn tác."))
+          return;
+        try {
+          if (demoMode) {
+            await sleep(800);
+            campaigns.find((x) => x.id === id).isActive = false;
+            toast("success", "✅ Chiến dịch đã đóng (Demo)");
+            updateStats();
+            renderCampaigns();
+            renderAdminPanel();
+          } else {
+            const tx = await contract.connect(signer).closeCampaign(id);
+            toast("info", "⏳ Đang đóng...");
+            await tx.wait();
+            toast("success", "✅ Đã đóng chiến dịch");
+            await loadAllData();
+            renderAdminPanel();
+          }
+        } catch (e) {
+          toast("error", "❌ " + (e.reason || e.message));
+        }
+      }
+
+      // ======================================================
+      // ADMIN PANEL
+      // ======================================================
+      function renderAdminPanel() {
+        const isAdmin =
+          demoMode ||
+          (userAddress &&
+            ownerAddress &&
+            userAddress.toLowerCase() === ownerAddress.toLowerCase());
+        const content = document.getElementById("adminContent");
+        document.getElementById("adminHeader").style.display = ownerAddress
+          ? "flex"
+          : "none";
+
+        if (!ownerAddress) {
+          content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🔒</div><div>Kết nối contract trước</div></div>`;
+          return;
+        }
+
+        content.innerHTML = `
+    <div style="margin-bottom:28px">
+      <div class="section-header">
+        <div class="section-title">Tạo Chiến dịch Mới</div>
+        ${isAdmin ? `<button class="btn btn-primary" onclick="openModal('createCampModal')">+ Tạo chiến dịch</button>` : ""}
+      </div>
+      ${!isAdmin ? `<div style="padding:14px;background:rgba(255,82,82,0.1);border:1px solid rgba(255,82,82,0.3);border-radius:var(--radius2);font-size:13px;color:var(--danger)">🔒 Bạn không phải admin. Chỉ chủ contract mới có thể tạo/đóng chiến dịch và ghi chi tiêu.</div>` : ""}
+    </div>
+
+    <div class="section-title" style="margin-bottom:16px">Quản lý Chiến dịch</div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead><tr>
+          <th>#</th>
+          <th>TÊN CHIẾN DỊCH</th>
+          <th>QUYÊN GÓP</th>
+          <th>ĐÃ CHI</th>
+          <th>SỐ DƯ</th>
+          <th>TRẠNG THÁI</th>
+          ${isAdmin ? "<th>HÀNH ĐỘNG</th>" : ""}
+        </tr></thead>
+        <tbody>
+          ${campaigns
+            .map((c) => {
+              const raised = parseFloat(ethers.formatEther(c.raisedAmount));
+              const spent = parseFloat(ethers.formatEther(c.spentAmount));
+              const bal = raised - spent;
+              return `<tr>
+              <td class="mono" style="color:var(--text3)">#${c.id}</td>
+              <td style="max-width:220px;font-weight:500">${c.name}</td>
+              <td><span class="amount-eth amount-raised">${raised.toFixed(4)}</span></td>
+              <td><span class="amount-eth amount-spent">${spent.toFixed(4)}</span></td>
+              <td><span class="amount-eth amount-bal">${bal.toFixed(4)}</span></td>
+              <td><span class="status-badge ${c.isActive ? "status-active" : "status-closed"}">${c.isActive ? "🟢 Active" : "⚫ Closed"}</span></td>
+              ${
+                isAdmin
+                  ? `<td>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  ${
+                    c.isActive
+                      ? `
+                    <button class="btn btn-sm btn-ghost" onclick="openExpense(${c.id})">📝 Chi tiêu</button>
+                    <button class="btn btn-sm btn-danger" onclick="closeCampaign(${c.id})">🔒 Đóng</button>
+                  `
+                      : '<span style="font-size:12px;color:var(--text3)">Đã đóng</span>'
+                  }
+                </div>
+              </td>`
+                  : ""
+              }
+            </tr>`;
+            })
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+      }
+
+      // ======================================================
+      // VERIFY PAGE
+      // ======================================================
+      function renderVerifyPage() {
+        const content = document.getElementById("verifyContent");
+        content.innerHTML = `
+    <div style="margin-bottom:20px">
+      <select id="verifySelect" style="max-width:400px;margin-bottom:16px" onchange="verifySelected()">
+        <option value="">-- Chọn chiến dịch để kiểm tra --</option>
+        ${campaigns.map((c) => `<option value="${c.id}">#${c.id} — ${c.name}</option>`).join("")}
+      </select>
+    </div>
+    <div id="verifyResult"></div>
+  `;
+      }
+
+      async function verifySelected() {
+        const id = parseInt(document.getElementById("verifySelect").value);
+        if (isNaN(id)) {
+          document.getElementById("verifyResult").innerHTML = "";
+          return;
+        }
+
+        const result = document.getElementById("verifyResult");
+        result.innerHTML =
+          '<div style="text-align:center;padding:24px;color:var(--text3)"><span class="spinner" style="border-color:rgba(0,229,255,0.3);border-top-color:var(--accent)"></span> Đang tải dữ liệu...</div>';
+
+        const c = campaigns.find((x) => x.id === id);
+        let donations = [],
+          expenses = [];
+        if (demoMode) {
+          donations = DEMO_DONATIONS[id] || [];
+          expenses = DEMO_EXPENSES[id] || [];
+        } else if (contract) {
+          try {
+            [donations, expenses] = await Promise.all([
+              contract.getDonations(id),
+              contract.getExpenses(id),
+            ]);
+          } catch (e) {}
+        }
+
+        const raised = parseFloat(ethers.formatEther(c.raisedAmount));
+        const spent = parseFloat(ethers.formatEther(c.spentAmount));
+        const bal = raised - spent;
+        const totalDon = donations.reduce(
+          (s, d) => s + parseFloat(ethers.formatEther(d.amount)),
+          0,
+        );
+        const totalExp = expenses.reduce(
+          (s, e) => s + parseFloat(ethers.formatEther(e.amount)),
+          0,
+        );
+        const donOk = Math.abs(totalDon - raised) < 0.00001;
+        const expOk = Math.abs(totalExp - spent) < 0.00001;
+        const balOk = Math.abs(raised - spent - bal) < 0.00001;
+
+        result.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:18px;margin-bottom:4px">${c.name}</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px">${c.description}</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px">
+        <div style="padding:14px;background:var(--bg3);border-radius:var(--radius2)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">TỔNG QUYÊN GÓP</div>
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600;color:var(--accent)">${raised.toFixed(4)} ETH</div>
+        </div>
+        <div style="padding:14px;background:var(--bg3);border-radius:var(--radius2)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">TỔNG CHI TIÊU</div>
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600;color:var(--accent2)">${spent.toFixed(4)} ETH</div>
+        </div>
+        <div style="padding:14px;background:var(--bg3);border-radius:var(--radius2)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:4px">SỐ DƯ CÒN LẠI</div>
+          <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:600;color:var(--green)">${bal.toFixed(4)} ETH</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg3);border-radius:var(--radius2)">
+          <div>
+            <div style="font-weight:500;margin-bottom:2px">Kiểm tra Quyên góp</div>
+            <div style="font-size:12px;color:var(--text3)">Tổng ${donations.length} giao dịch = ${totalDon.toFixed(4)} ETH</div>
+          </div>
+          <span class="verify-badge ${donOk ? "verified" : "unverified"}">${donOk ? "✓ Đã xác nhận" : "⚠ Sai lệch"}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg3);border-radius:var(--radius2)">
+          <div>
+            <div style="font-weight:500;margin-bottom:2px">Kiểm tra Chi tiêu</div>
+            <div style="font-size:12px;color:var(--text3)">Tổng ${expenses.length} khoản = ${totalExp.toFixed(4)} ETH</div>
+          </div>
+          <span class="verify-badge ${expOk ? "verified" : "unverified"}">${expOk ? "✓ Đã xác nhận" : "⚠ Sai lệch"}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--bg3);border-radius:var(--radius2)">
+          <div>
+            <div style="font-weight:500;margin-bottom:2px">Kiểm tra Số dư</div>
+            <div style="font-size:12px;color:var(--text3)">Raised − Spent = ${bal.toFixed(4)} ETH</div>
+          </div>
+          <span class="verify-badge ${balOk ? "verified" : "unverified"}">${balOk ? "✓ Đã xác nhận" : "⚠ Sai lệch"}</span>
+        </div>
+      </div>
+    </div>
+
+    ${
+      expenses.length > 0
+        ? `
+    <div style="margin-bottom:12px;font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:16px">Chứng từ Chi tiêu (IPFS)</div>
+    <div class="table-container">
+      <table class="data-table">
+        <thead><tr>
+          <th>MỤC ĐÍCH</th>
+          <th>SỐ TIỀN</th>
+          <th>EVIDENCE HASH (on-chain)</th>
+          <th>IPFS LINK</th>
+        </tr></thead>
+        <tbody>
+          ${expenses
+            .map((e) => {
+              const hashStr =
+                typeof e.evidenceHash === "string"
+                  ? e.evidenceHash
+                  : "0x" + e.evidenceHash.toString(16).padStart(64, "0");
+              return `<tr>
+              <td>${e.purpose}</td>
+              <td class="amount-eth amount-spent">${parseFloat(ethers.formatEther(e.amount)).toFixed(4)} ETH</td>
+              <td>
+                <div class="hash-pill" onclick="copyText('${hashStr}')" title="Click để copy">${hashStr.slice(0, 20)}...</div>
+              </td>
+              <td>
+                <a class="evidence-link" href="https://ipfs.io/ipfs/${hashStr}" target="_blank">🔗 Xem chứng từ</a>
+              </td>
+            </tr>`;
+            })
+            .join("")}
+        </tbody>
+      </table>
+    </div>`
+        : ""
+    }
+  `;
+      }
+
+      // ======================================================
+      // UTILS
+      // ======================================================
+      function showPage(page) {
+        document
+          .querySelectorAll(".page")
+          .forEach((p) => p.classList.remove("active"));
+        document.getElementById("page-" + page).classList.add("active");
+        document
+          .querySelectorAll(".nav-btn")
+          .forEach((b) => b.classList.remove("active"));
+        event.target.classList.add("active");
+        if (page === "admin") renderAdminPanel();
+      }
+
+      function openModal(id) {
+        document.getElementById(id).classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      document.querySelectorAll(".modal-overlay").forEach((m) => {
+        m.addEventListener("click", (e) => {
+          if (e.target === m) {
+            m.classList.remove("open");
+            document.body.style.overflow = "";
+          }
+        });
+      });
+
+      function toast(type, msg, dur = 4000) {
+        const icons = { success: "✅", error: "❌", info: "ℹ️" };
+        const el = document.createElement("div");
+        el.className = `toast toast-${type}`;
+        el.innerHTML = `<span class="toast-icon">${icons[type] || "ℹ️"}</span><span class="toast-msg">${msg}</span>`;
+        document.getElementById("toast-container").appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          el.style.transform = "translateX(100%)";
+          el.style.transition = "all 0.3s";
+          setTimeout(() => el.remove(), 300);
+        }, dur);
+      }
+
+      function fmtEth(wei) {
+        try {
+          return parseFloat(ethers.formatEther(wei)).toFixed(4);
+        } catch {
+          return "0.0000";
+        }
+      }
+
+      function shortAddr(addr) {
+        if (!addr || addr.length < 10) return addr;
+        return addr.slice(0, 6) + "..." + addr.slice(-4);
+      }
+
+      function shortHash(h) {
+        return h.slice(0, 12) + "...";
+      }
+
+      function fmtDate(ts) {
+        return new Date(ts * 1000).toLocaleDateString("vi-VN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function timeAgo(ts) {
+        const diff = Math.floor(Date.now() / 1000 - ts);
+        if (diff < 3600) return Math.floor(diff / 60) + " phút trước";
+        if (diff < 86400) return Math.floor(diff / 3600) + " giờ trước";
+        return Math.floor(diff / 86400) + " ngày trước";
+      }
+
+      function copyText(t) {
+        navigator.clipboard
+          .writeText(t)
+          .then(() => toast("success", "Đã copy!", 1500));
+      }
+
+      function sleep(ms) {
+        return new Promise((r) => setTimeout(r, ms));
+      }
+
+      // Ethers polyfill for browser
+      window.addEventListener("load", () => {
+        if (typeof ethers === "undefined") {
+          toast(
+            "error",
+            "Không tải được thư viện ethers.js. Vui lòng kiểm tra kết nối mạng.",
+          );
+        }
+      });
+    </script>
+  </body>
+</html>

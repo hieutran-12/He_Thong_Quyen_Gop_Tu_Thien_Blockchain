@@ -18,9 +18,10 @@
 </p>
 
 ---
-
 <p align="center">
-  <img src="poster.png" width="600"/>
+  <img src="doc/poster.png" width="600"/>
+</p>
+<p align="center">
   👉 <a href="doc/poster_blockchain.pdf"><b>📄 Xem Poster PDF đầy đủ</b></a>
 </p>
 

@@ -3,7 +3,7 @@
 <table align="center">
   <tr>
     <td align="center">
-      <img src="poster.png" height="120"/>
+      <img src="anh.jpg" height="120"/>
     </td>
     <td align="center">
       <img src="doc/fitdnu_logo (1).png" height="120"/>
@@ -19,7 +19,7 @@
 
 ---
 <p align="center">
-  <img src="doc/poster.png" width="600"/>
+  <img src="poster.png" width="600"/>
 </p>
 <p align="center">
   👉 <a href="doc/poster_blockchain.pdf"><b>📄 Xem Poster PDF đầy đủ</b></a>
